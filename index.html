@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="tr">
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Joseph Games — Oyun Öneri</title>
+  <style>
+    :root{--bg:#07111a;--card:#0f1b26;--accent:#3ea0ff;--accent-2:#28c76f;--muted:#9aa6b2;--text:#e6eef6}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#07111a 0%, #071827 60%);color:var(--text);font-family:Segoe UI,Roboto,Arial,sans-serif}
+    .page{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;padding:28px}
+
+    /* Top-left suggestions box */
+    .suggestions{position:absolute;left:28px;top:28px;width:280px;max-height:80vh;overflow:auto;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);padding:10px;border-radius:10px}
+    .suggestions h4{margin:0 0 8px;font-size:14px}
+    .suggestions .item{font-size:13px;color:var(--muted);padding:8px 6px;border-radius:6px;cursor:pointer}
+    .suggestions .item:hover{background:rgba(255,255,255,0.02);color:var(--text)}
+    .suggestions .featured{background:linear-gradient(90deg, rgba(62,160,255,0.08), rgba(40,199,111,0.04));border:1px solid rgba(62,160,255,0.12);color:var(--text);font-weight:600}
+    .badge{display:inline-block;margin-left:8px;padding:2px 6px;border-radius:8px;background:var(--accent);color:#071827;font-size:11px}
+
+    /* Top-right settings */
+    .settings{position:absolute;right:28px;top:28px;display:flex;gap:8px;align-items:center}
+    .settings button{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text);padding:8px 10px;border-radius:8px;cursor:pointer}
+
+    /* Center hero */
+    .hero{width:100%;max-width:1100px;display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:start}
+    .hero-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));border-radius:12px;padding:28px;border:1px solid rgba(255,255,255,0.03)}
+    .title{font-size:28px;margin:0 0 8px}
+    .subtitle{color:var(--muted);margin:0 0 18px}
+
+    /* search + description row */
+    .search-row{display:flex;gap:16px;align-items:flex-start}
+    .desc{width:260px;color:var(--muted);font-size:14px}
+    .search-wrap{flex:1;display:flex;gap:8px}
+    .search-input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);background:rgba(0,0,0,0.2);color:var(--text);font-size:15px}
+    .search-btn{background:var(--accent);color:#fff;border:0;padding:12px 16px;border-radius:10px;cursor:pointer}
+    .recent-searches{margin-top:10px;color:var(--muted);font-size:13px}
+    .recent-searches .term{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);display:inline-block;margin:4px 6px 0 0;cursor:pointer}
+
+    .center-results{margin-top:18px;display:grid;gap:10px}
+    .game-card{background:rgba(0,0,0,0.2);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
+    .game-card h5{margin:0 0 6px}
+    .meta{color:var(--muted);font-size:13px}
+
+    .right-panel{display:flex;flex-direction:column;gap:12px}
+    .card-small{background:rgba(255,255,255,0.02);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.03)}
+    .card-small h4{margin:0 0 8px}
+    .results{display:grid;grid-template-columns:1fr;gap:8px}
+    .result-item{background:rgba(0,0,0,0.2);padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);font-size:14px}
+
+    footer{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;color:var(--muted);font-size:13px}
+
+    @media(max-width:940px){.hero{grid-template-columns:1fr;}.suggestions{display:none}.settings{right:14px}.search-row{flex-direction:column}.desc{width:100%}}
+    /* Theme modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:1200}
+    .modal{background:var(--card);padding:18px;border-radius:10px;max-width:760px;width:92%;border:1px solid rgba(255,255,255,0.04)}
+    .theme-grid{display:flex;gap:12px;flex-wrap:wrap}
+    .theme-item{flex:1 1 30%;min-width:160px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.04);cursor:pointer}
+    .theme-item img{width:100%;height:100px;object-fit:cover;display:block}
+    .theme-item .label{padding:8px;background:transparent;color:var(--text);font-size:14px;text-align:center}
+    .modal-close{float:right;background:transparent;border:0;color:var(--muted);cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="suggestions card">
+      <h4>Önerilen Oyunlar</h4>
+      <div id="suggestList"></div>
+    </div>
+
+    <div class="settings">
+      <button id="themeBtn">Tema</button>
+      <button id="prefsBtn">Ayarlar</button>
+    </div>
+
+    <div class="hero">
+      <div class="hero-card">
+        <h2 class="title">Joseph Games</h2>
+        <p class="subtitle">Hangi türleri sevdiğini yaz — hızlıca sana uygun oyunlar önerelim.</p>
+
+        <div class="search-row">
+          <div class="desc">
+            <strong>Hakkında</strong>
+            <div style="margin-top:8px">Joseph Games, oyun türlerine göre hızlı öneriler sunar. Sol taraftan popüler başlıkları seçebilir veya aşağıdaki arama ile keşfedebilirsiniz.</div>
+          </div>
+
+          <div style="flex:1">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Hızlı arama</div>
+            <div class="search-wrap">
+              <input id="searchInput" class="search-input" placeholder="Oyun, tür veya anahtar kelime ara...">
+              <button id="searchBtn" class="search-btn">Ara & Öner</button>
+              <button id="openSiteBtn" class="search-btn" style="background:var(--accent-2)">Hemen Keşfet</button>
+            </div>
+
+            <div id="recentSearches" class="recent-searches" aria-live="polite"></div>
+
+          </div>
+        </div>
+
+        <div id="centerResults" class="center-results"></div>
+
+      </div>
+
+      <div class="right-panel">
+        <div class="card-small">
+          <h4>Hızlı Öneriler</h4>
+          <div class="results" id="quickResults"></div>
+        </div>
+
+        <div class="card-small">
+          <h4>Nasıl Kullanılır</h4>
+          <div style="color:var(--muted);font-size:13px">Arama kutusuna yazıp "Ara & Öner" tuşuna bas. Sol üstteki öneriler hızlı seçimlerdir.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <footer>Demo — local olarak tarayıcıda çalışır</footer>
+  </div>
+
+  <script>
+    // Small sample list — replace with your full 150-game array in the same format
+    const GAMES = [
+      {id:'g1',title:'VALORANT',genres:['Action','FPS'],platform:'PC'},
+      {id:'g2',title:'LEAGUE OF LEGENDS',genres:['Action','MOBA'],platform:'PC'},
+      {id:'g3',title:'GRAND THEFT AUTO V',genres:['Action','Open World'],platform:'PC,Console'},
+      {id:'g4',title:'Counter Strike',genres:['Action','FPS'],platform:'PC'},
+      {id:'g5',title:'Shadow Strike',genres:['Action','Story'],platform:'PC,Console'}
+    ];
+
+    const FEATURED = new Set(['valorant','league of legends','grand theft auto v','counter strike','counter-strike']);
+    const RECENT_KEY = 'jg_recent_v1';
+
+    const suggestList = document.getElementById('suggestList');
+    const quickResults = document.getElementById('quickResults');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const prefBtn = document.getElementById('prefsBtn');
+    const openSiteBtn = document.getElementById('openSiteBtn');
+    const centerResults = document.getElementById('centerResults');
+    const recentEl = document.getElementById('recentSearches');
+
+    function escapeHtml(s){ return String(s).replace(/[&<>\\\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\"':'&quot;',"'":'&#39;'}[c])); }
+
+    function renderSuggestions(){
+      suggestList.innerHTML = '';
+      // show all suggestions; you can limit or sort as needed
+      GAMES.forEach(g=>{
+        const d = document.createElement('div');
+        d.className = 'item';
+        const isFeatured = FEATURED.has(g.title.toLowerCase());
+        if(isFeatured) d.classList.add('featured');
+        d.dataset.id = g.id;
+        d.innerHTML = `<div style="font-weight:600">${escapeHtml(g.title)}</div><div class="meta">${escapeHtml(g.genres.join(', '))}</div>` + (isFeatured? '<span class="badge">Öne Çıkan</span>':'');
+        d.addEventListener('click', ()=>{
+          // clicking suggestion fills search and shows game(s)
+          searchInput.value = g.title;
+          saveRecent(g.title);
+          renderResults([g]);
+          window.scrollTo({top:0,behavior:'smooth'});
+        });
+        suggestList.appendChild(d);
+      });
+    }
+
+    function renderQuick(){
+      quickResults.innerHTML = '';
+      const list = GAMES.slice().sort(()=>Math.random()-0.5).slice(0,3);
+      list.forEach(g=>{
+        const it = document.createElement('div'); it.className='result-item'; it.textContent = g.title + ' — ' + g.platform;
+        quickResults.appendChild(it);
+      });
+    }
+
+    function renderResults(list){
+      centerResults.innerHTML = '';
+      if(!list || list.length===0){ centerResults.innerHTML = '<div style="color:var(--muted)">Sonuç yok.</div>'; return }
+      list.forEach(g=>{
+        const el = document.createElement('div'); el.className='game-card';
+        const isFeatured = FEATURED.has(g.title.toLowerCase());
+        el.innerHTML = `<h5>${escapeHtml(g.title)} ${isFeatured?'<span class="badge">Öne Çıkan</span>':''}</h5><div class="meta">${escapeHtml((g.genres||[]).join(', '))} • ${escapeHtml(g.platform||'')}</div>`;
+        el.addEventListener('click', ()=>{ showDetail(g); });
+        centerResults.appendChild(el);
+      });
+    }
+
+    function showDetail(g){
+      const txt = `${g.title}\nTürler: ${g.genres.join(', ')}\nPlatform: ${g.platform || ''}`;
+      alert(txt);
+    }
+
+    function searchAndRecommend(){
+      const q = (searchInput.value||'').trim();
+      if(!q){ alert('Lütfen arama terimi girin veya Tercih Anketi ile keşfet.'); return }
+      saveRecent(q);
+      const ql = q.toLowerCase();
+      const res = GAMES.filter(g=> g.title.toLowerCase().includes(ql) || (g.genres||[]).some(gn=>gn.toLowerCase().includes(ql)) );
+      renderResults(res);
+    }
+
+    // Recent searches
+    function loadRecent(){
+      try{ const raw = localStorage.getItem(RECENT_KEY); return raw?JSON.parse(raw):[] }catch(e){ return [] }
+    }
+    function saveRecent(term){
+      if(!term) return;
+      let arr = loadRecent();
+      // keep unique, most recent first
+      arr = arr.filter(x=> x.toLowerCase() !== term.toLowerCase());
+      arr.unshift(term);
+      if(arr.length>10) arr = arr.slice(0,10);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(arr));
+      renderRecent();
+    }
+    function renderRecent(){
+      const arr = loadRecent();
+      recentEl.innerHTML = '';
+      if(arr.length===0){ recentEl.textContent = 'Henüz arama yok.'; return }
+      arr.forEach(t=>{
+        const s = document.createElement('span'); s.className='term'; s.textContent = t;
+        s.addEventListener('click', ()=>{ searchInput.value = t; searchAndRecommend(); });
+        recentEl.appendChild(s);
+      });
+    }
+
+    // events
+    searchBtn.addEventListener('click', searchAndRecommend);
+    openSiteBtn.addEventListener('click', ()=>{ renderResults(GAMES.slice(0,20)); });
+    prefBtn.addEventListener('click', ()=>{ alert('Ayarlar: placeholder'); });
+
+    // Theme picker implementation
+    const THEME_KEY = 'jg_theme_v1';
+    const THEMES = [
+      { id: 't1', name: 'Mor Şehir', img: 'theme1.jpg', fallback: 'linear-gradient(180deg,#2b0030 0%, #5b1a7a 60%)' },
+      { id: 't2', name: 'Gün Batımı', img: 'theme2.jpg', fallback: 'linear-gradient(180deg,#2b0f5a 0%, #7a2fb3 60%)' },
+      { id: 't3', name: 'Gece Sokak', img: 'theme3.jpg', fallback: 'linear-gradient(180deg,#0b1020 0%, #2e0a3a 60%)' }
+    ];
+
+    // Create modal DOM
+    const modalBackdrop = document.createElement('div'); modalBackdrop.className='modal-backdrop'; modalBackdrop.id='themeModal';
+    const modal = document.createElement('div'); modal.className='modal';
+    modal.innerHTML = `<button class="modal-close" aria-label="Kapat">✕</button><h3>Tema Seç</h3><div class="theme-grid" id="themeGrid"></div>`;
+    modalBackdrop.appendChild(modal); document.body.appendChild(modalBackdrop);
+
+    function openThemeModal(){ modalBackdrop.style.display='flex'; }
+    function closeThemeModal(){ modalBackdrop.style.display='none'; }
+    modal.querySelector('.modal-close').addEventListener('click', closeThemeModal);
+    modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeThemeModal(); });
+
+    // render theme choices
+    function renderThemeChoices(){
+      const grid = document.getElementById('themeGrid'); grid.innerHTML='';
+      THEMES.forEach(t=>{
+        const itm = document.createElement('div'); itm.className='theme-item';
+        const img = document.createElement('img'); img.alt = t.name; img.src = t.img; // will load if file exists
+        // fallback box if image missing
+        img.onerror = ()=>{ img.style.display='none'; itm.style.background = t.fallback; };
+        const lbl = document.createElement('div'); lbl.className='label'; lbl.textContent = t.name;
+        itm.appendChild(img); itm.appendChild(lbl);
+        itm.addEventListener('click', ()=>{ applyTheme(t.id); closeThemeModal(); });
+        grid.appendChild(itm);
+      });
+    }
+
+    function applyTheme(id){
+      const t = THEMES.find(x=>x.id===id); if(!t) return;
+      // try to use image if available
+      const test = new Image(); test.onload = ()=>{ document.body.style.background = `url('${t.img}') center/cover no-repeat`; saveTheme(id); };
+      test.onerror = ()=>{ document.body.style.background = t.fallback; saveTheme(id); };
+      test.src = t.img;
+      // adjust card/background colors slightly based on selection
+      if(id==='t1'){ document.documentElement.style.setProperty('--card','#0f1520'); }
+      else if(id==='t2'){ document.documentElement.style.setProperty('--card','#1a0f22'); }
+      else if(id==='t3'){ document.documentElement.style.setProperty('--card','#0c1018'); }
+    }
+
+    function saveTheme(id){ localStorage.setItem(THEME_KEY,id); }
+    function loadTheme(){ const id = localStorage.getItem(THEME_KEY); if(id) applyTheme(id); }
+
+    // wire theme button
+    const themeBtn = document.getElementById('themeBtn');
+    themeBtn.addEventListener('click', ()=>{ renderThemeChoices(); openThemeModal(); });
+
+    // load previously selected theme
+    loadTheme();
+
+    // init
+    renderSuggestions(); renderQuick(); renderResults(GAMES.slice(0,6)); renderRecent();
+
+  </script>
+</body>
+</html>
